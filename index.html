@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Recipe Generator — IBM Hackathon</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --orange: #ff6b35;
+    --green:  #4CAF50;
+    --cream:  #FFF8F2;
+    --dark:   #1a1a2e;
+    --mid:    #2d2d44;
+    --text:   #2c2c2c;
+    --muted:  #57606a;
+    --border: #e5e7eb;
+    --card:   #ffffff;
+    --shadow: 0 4px 24px rgba(0,0,0,0.08);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.65;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+    background: rgba(26,26,46,0.96);
+    backdrop-filter: blur(10px);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 5%; height: 64px;
+    border-bottom: 1px solid rgba(255,107,53,0.2);
+  }
+  .nav-brand {
+    font-size: 1.25rem; font-weight: 800; color: #fff;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .nav-brand span { color: var(--orange); }
+  .nav-logo-badge {
+    background: var(--orange); color: #fff;
+    border-radius: 8px; padding: 3px 8px;
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 1px;
+  }
+  .nav-links { display: flex; gap: 28px; list-style: none; }
+  .nav-links a {
+    color: rgba(255,255,255,0.75); text-decoration: none;
+    font-size: 0.85rem; font-weight: 500;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--orange); }
+  .nav-cta {
+    background: var(--orange); color: #fff;
+    border-radius: 24px; padding: 7px 20px;
+    font-size: 0.8rem; font-weight: 600;
+    text-decoration: none; transition: opacity 0.2s;
+  }
+  .nav-cta:hover { opacity: 0.85; }
+
+  /* ── SECTIONS ── */
+  section { padding: 80px 5%; }
+
+  /* ── HERO ── */
+  #hero {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; padding-top: 100px; padding-bottom: 60px;
+    position: relative; overflow: hidden;
+  }
+  #hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 70% 60% at 50% 40%, rgba(255,107,53,0.12) 0%, transparent 70%);
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,107,53,0.15);
+    border: 1px solid rgba(255,107,53,0.35);
+    border-radius: 24px; padding: 6px 18px;
+    color: var(--orange); font-size: 0.78rem; font-weight: 600;
+    letter-spacing: 0.5px; margin-bottom: 28px;
+  }
+  .hero-badge-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--orange);
+    animation: pulse-dot 1.6s infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.4; transform: scale(1.5); }
+  }
+  #hero h1 {
+    font-size: clamp(2.4rem, 5.5vw, 4rem);
+    font-weight: 900; color: #fff;
+    line-height: 1.15; max-width: 800px;
+    margin-bottom: 22px; position: relative;
+  }
+  #hero h1 em { font-style: normal; color: var(--orange); }
+  #hero p.sub {
+    color: rgba(255,255,255,0.68); font-size: clamp(0.95rem, 1.8vw, 1.1rem);
+    max-width: 680px; margin-bottom: 40px; font-weight: 400; position: relative;
+  }
+
+  /* search box */
+  .search-wrapper {
+    width: 100%; max-width: 700px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 18px; padding: 20px 24px;
+    position: relative; margin-bottom: 24px;
+  }
+  .search-row {
+    display: flex; gap: 12px; align-items: center;
+  }
+  .search-row input {
+    flex: 1; background: transparent;
+    border: none; outline: none;
+    color: #fff; font-size: 1rem;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 400;
+  }
+  .search-row input::placeholder { color: rgba(255,255,255,0.45); }
+  .btn-generate {
+    background: var(--orange); color: #fff;
+    border: none; border-radius: 12px;
+    padding: 12px 28px; font-size: 0.9rem;
+    font-weight: 700; cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    white-space: nowrap;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .btn-generate:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255,107,53,0.45); }
+  .example-chips {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px;
+  }
+  .chip {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 24px; padding: 5px 14px;
+    color: rgba(255,255,255,0.7); font-size: 0.75rem;
+    cursor: pointer; transition: background 0.2s, color 0.2s;
+  }
+  .chip:hover { background: rgba(255,107,53,0.2); color: var(--orange); }
+
+  .hero-stats {
+    display: flex; gap: 36px; margin-top: 36px; position: relative;
+  }
+  .stat { text-align: center; }
+  .stat-num { font-size: 1.6rem; font-weight: 800; color: var(--orange); }
+  .stat-label { font-size: 0.72rem; color: rgba(255,255,255,0.5); letter-spacing: 0.5px; }
+
+  .powered-by {
+    display: flex; align-items: center; gap: 10px;
+    margin-top: 32px; position: relative;
+  }
+  .powered-by span { color: rgba(255,255,255,0.4); font-size: 0.72rem; }
+  .ibm-pill {
+    background: #0f62fe; color: #fff;
+    border-radius: 6px; padding: 3px 10px;
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.5px;
+  }
+  .rag-pill {
+    background: rgba(76,175,80,0.2); color: var(--green);
+    border: 1px solid rgba(76,175,80,0.35);
+    border-radius: 6px; padding: 3px 10px;
+    font-size: 0.7rem; font-weight: 600;
+  }
+
+  /* ── SECTION TITLES ── */
+  .section-title {
+    text-align: center; margin-bottom: 56px;
+  }
+  .section-title .tag {
+    display: inline-block;
+    background: rgba(255,107,53,0.1);
+    color: var(--orange); border-radius: 24px;
+    padding: 4px 16px; font-size: 0.72rem;
+    font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; margin-bottom: 12px;
+  }
+  .section-title h2 {
+    font-size: clamp(1.7rem, 3.5vw, 2.5rem);
+    font-weight: 800; color: var(--dark);
+    line-height: 1.2;
+  }
+  .section-title p {
+    color: var(--muted); margin-top: 12px;
+    max-width: 560px; margin-left: auto; margin-right: auto;
+  }
+
+  /* ── FEATURES ── */
+  #features { background: #fff; }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+  }
+  .feat-card {
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 18px; padding: 32px 28px;
+    transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+    cursor: default;
+  }
+  .feat-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 40px rgba(255,107,53,0.12);
+    border-color: var(--orange);
+  }
+  .feat-icon {
+    font-size: 2.2rem; margin-bottom: 18px;
+    display: flex; align-items: center; justify-content: center;
+    width: 60px; height: 60px;
+    background: rgba(255,107,53,0.1);
+    border-radius: 14px;
+  }
+  .feat-card h3 { font-size: 1.05rem; font-weight: 700; color: var(--dark); margin-bottom: 8px; }
+  .feat-card p  { font-size: 0.85rem; color: var(--muted); line-height: 1.6; }
+
+  /* ── HOW IT WORKS ── */
+  #how { background: var(--cream); }
+  .steps-row {
+    display: flex; gap: 0; position: relative;
+    justify-content: center; flex-wrap: wrap;
+  }
+  .step {
+    flex: 1; min-width: 200px; max-width: 240px;
+    text-align: center; padding: 0 20px;
+    position: relative;
+  }
+  .step:not(:last-child)::after {
+    content: '→';
+    position: absolute; right: -10px; top: 28px;
+    font-size: 1.4rem; color: var(--orange); font-weight: 700;
+  }
+  .step-num {
+    width: 60px; height: 60px; border-radius: 50%;
+    background: var(--orange); color: #fff;
+    font-size: 1.4rem; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 18px; box-shadow: 0 6px 20px rgba(255,107,53,0.35);
+  }
+  .step h4 { font-size: 0.95rem; font-weight: 700; color: var(--dark); margin-bottom: 8px; }
+  .step p  { font-size: 0.8rem; color: var(--muted); }
+
+  /* ── RECIPE SEARCH ── */
+  #recipe-search { background: #fff; }
+  .filters-row {
+    display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 28px; justify-content: center;
+  }
+  .filter-btn {
+    background: var(--cream); border: 1px solid var(--border);
+    border-radius: 24px; padding: 7px 18px;
+    font-size: 0.8rem; font-weight: 600; color: var(--muted);
+    cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s;
+    font-family: 'Poppins', sans-serif;
+  }
+  .filter-btn:hover, .filter-btn.active {
+    background: var(--orange); color: #fff; border-color: var(--orange);
+  }
+  .search-bar-2 {
+    display: flex; gap: 12px; max-width: 640px; margin: 0 auto 40px;
+  }
+  .search-bar-2 input {
+    flex: 1; border: 1.5px solid var(--border);
+    border-radius: 12px; padding: 12px 18px;
+    font-size: 0.9rem; font-family: 'Poppins', sans-serif;
+    outline: none; background: var(--cream);
+    transition: border-color 0.2s;
+  }
+  .search-bar-2 input:focus { border-color: var(--orange); }
+  .btn-search {
+    background: var(--orange); color: #fff;
+    border: none; border-radius: 12px;
+    padding: 12px 24px; font-size: 0.85rem;
+    font-weight: 700; cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    transition: opacity 0.2s;
+  }
+  .btn-search:hover { opacity: 0.87; }
+
+  /* ── RECIPE CARD ── */
+  #ai-response { background: var(--cream); }
+  .ai-response-container {
+    max-width: 900px; margin: 0 auto;
+  }
+  .ai-label {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(76,175,80,0.1); border: 1px solid rgba(76,175,80,0.3);
+    border-radius: 8px; padding: 5px 14px;
+    color: var(--green); font-size: 0.75rem; font-weight: 700;
+    margin-bottom: 20px; letter-spacing: 0.5px;
+  }
+  .recipe-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 24px; overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .recipe-header {
+    background: linear-gradient(135deg, var(--orange) 0%, #e8522e 100%);
+    padding: 36px 36px 28px;
+    color: #fff;
+  }
+  .recipe-header h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 10px; }
+  .recipe-meta {
+    display: flex; flex-wrap: wrap; gap: 20px; margin-top: 18px;
+  }
+  .meta-item {
+    display: flex; align-items: center; gap: 7px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 8px; padding: 6px 14px;
+    font-size: 0.8rem; font-weight: 600;
+  }
+  .meta-icon { font-size: 1rem; }
+  .recipe-body { display: grid; grid-template-columns: 1fr 1.4fr; gap: 0; }
+  .recipe-left {
+    padding: 32px 28px;
+    border-right: 1px solid var(--border);
+  }
+  .recipe-right { padding: 32px 28px; }
+  .recipe-section-title {
+    font-size: 0.8rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px;
+    color: var(--orange); margin-bottom: 16px;
+  }
+  .ingredient-list { list-style: none; }
+  .ingredient-list li {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 8px 0; border-bottom: 1px solid var(--border);
+    font-size: 0.87rem; color: var(--text);
+  }
+  .ingredient-list li:last-child { border-bottom: none; }
+  .ing-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--orange); margin-top: 6px; flex-shrink: 0;
+  }
+  .step-list { list-style: none; }
+  .step-list li {
+    display: flex; gap: 14px;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+    font-size: 0.87rem; color: var(--text); line-height: 1.6;
+  }
+  .step-list li:last-child { border-bottom: none; }
+  .step-badge {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--orange); color: #fff;
+    font-size: 0.72rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 2px;
+  }
+  .sub-section { margin-top: 28px; }
+  .sub-card {
+    background: rgba(76,175,80,0.06);
+    border: 1px solid rgba(76,175,80,0.2);
+    border-radius: 12px; padding: 14px 18px;
+    font-size: 0.82rem; color: var(--text);
+  }
+  .sub-card p { margin-bottom: 6px; }
+  .sub-card p:last-child { margin-bottom: 0; }
+  .sub-bullet { color: var(--green); font-weight: 700; margin-right: 6px; }
+
+  /* ── NUTRITION ── */
+  #nutrition { background: #fff; }
+  .nutrition-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px; max-width: 860px; margin: 0 auto;
+  }
+  .nut-card {
+    border: 1px solid var(--border);
+    border-radius: 16px; padding: 24px 20px;
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+    background: var(--cream);
+  }
+  .nut-card:hover { transform: translateY(-4px); box-shadow: 0 10px 28px rgba(0,0,0,0.08); }
+  .nut-value {
+    font-size: 2rem; font-weight: 800;
+    color: var(--orange); line-height: 1;
+  }
+  .nut-unit { font-size: 0.75rem; color: var(--muted); font-weight: 500; }
+  .nut-label { font-size: 0.82rem; font-weight: 600; color: var(--dark); margin-top: 8px; }
+  .nut-bar-wrap {
+    height: 5px; background: #eee;
+    border-radius: 3px; margin-top: 12px; overflow: hidden;
+  }
+  .nut-bar { height: 100%; border-radius: 3px; background: var(--orange); }
+
+  /* ── SHOPPING LIST ── */
+  #shopping { background: var(--cream); }
+  .shopping-container {
+    max-width: 600px; margin: 0 auto;
+    background: #fff; border-radius: 20px;
+    border: 1px solid var(--border); overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .shopping-header {
+    background: var(--green); color: #fff;
+    padding: 20px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .shopping-header h3 { font-size: 1.05rem; font-weight: 700; }
+  .shopping-header .count {
+    background: rgba(255,255,255,0.2);
+    border-radius: 20px; padding: 3px 12px;
+    font-size: 0.8rem; font-weight: 600;
+  }
+  .shopping-items { padding: 8px 0; }
+  .shop-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 13px 28px; border-bottom: 1px solid var(--border);
+    transition: background 0.15s; cursor: pointer;
+  }
+  .shop-item:last-child { border-bottom: none; }
+  .shop-item:hover { background: var(--cream); }
+  .shop-item input[type="checkbox"] {
+    width: 18px; height: 18px; accent-color: var(--green);
+    cursor: pointer; flex-shrink: 0;
+  }
+  .shop-item-name {
+    flex: 1; font-size: 0.88rem; color: var(--text); font-weight: 500;
+  }
+  .shop-item-qty {
+    font-size: 0.78rem; color: var(--muted); font-weight: 500;
+  }
+  .shop-item.checked .shop-item-name {
+    text-decoration: line-through; color: #aaa;
+  }
+  .shopping-footer {
+    padding: 16px 28px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-top: 1px solid var(--border);
+    background: var(--cream);
+  }
+  .shop-prog { font-size: 0.8rem; color: var(--muted); }
+  .btn-clear {
+    background: none; border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 14px;
+    font-size: 0.76rem; color: var(--muted); cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .btn-clear:hover { border-color: var(--orange); color: var(--orange); }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--dark);
+    color: rgba(255,255,255,0.65);
+    padding: 56px 5% 32px;
+  }
+  .footer-grid {
+    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 40px; margin-bottom: 48px;
+  }
+  .footer-brand h3 {
+    font-size: 1.2rem; font-weight: 800; color: #fff; margin-bottom: 12px;
+  }
+  .footer-brand h3 span { color: var(--orange); }
+  .footer-brand p { font-size: 0.82rem; line-height: 1.7; max-width: 280px; }
+  .footer-col h4 { color: #fff; font-size: 0.85rem; font-weight: 700; margin-bottom: 14px; }
+  .footer-col ul { list-style: none; }
+  .footer-col li { margin-bottom: 8px; }
+  .footer-col a { color: rgba(255,255,255,0.55); text-decoration: none; font-size: 0.82rem; transition: color 0.2s; }
+  .footer-col a:hover { color: var(--orange); }
+  .footer-bottom {
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-top: 24px;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 12px;
+  }
+  .footer-bottom p { font-size: 0.78rem; }
+  .footer-badges { display: flex; gap: 8px; }
+  .f-badge {
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 6px; padding: 4px 10px;
+    font-size: 0.68rem; font-weight: 600; letter-spacing: 0.5px;
+    color: rgba(255,255,255,0.55);
+  }
+
+  /* ── MADE WITH ── */
+  .made-with {
+    text-align: center; font-size: 0.72rem; color: #57606a;
+    border-top: 1px solid #e5e7eb; padding: 14px 5%;
+    background: #fff;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    nav { padding: 0 4%; }
+    .nav-links { display: none; }
+    .recipe-body { grid-template-columns: 1fr; }
+    .recipe-left { border-right: none; border-bottom: 1px solid var(--border); }
+    .footer-grid { grid-template-columns: 1fr 1fr; }
+    .steps-row .step:not(:last-child)::after { display: none; }
+    .hero-stats { gap: 20px; }
+  }
+  @media (max-width: 500px) {
+    .footer-grid { grid-template-columns: 1fr; }
+    .recipe-meta { gap: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <span style="font-size:1.35rem;">🍴</span>
+    <span>Recipe<span>AI</span></span>
+    <span class="nav-logo-badge">IBM Hackathon</span>
+  </div>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how">How it Works</a></li>
+    <li><a href="#recipe-search">Search</a></li>
+    <li><a href="#ai-response">Recipes</a></li>
+    <li><a href="#shopping">Shopping</a></li>
+  </ul>
+  <a href="#recipe-search" class="nav-cta">Try it Free</a>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-badge">
+    <span class="hero-badge-dot"></span>
+    Powered by IBM Granite &amp; RAG Technology
+  </div>
+  <h1>AI-Powered<br/><em>Recipe Generator</em></h1>
+  <p class="sub">Ask recipe questions, upload recipe documents, personalize meals, and generate intelligent cooking instructions using IBM Granite and RAG.</p>
+
+  <div class="search-wrapper">
+    <div class="search-row">
+      <span style="font-size:1.15rem;">🔍</span>
+      <input type="text" id="heroSearch" placeholder="Ask anything about recipes..." />
+      <button class="btn-generate" onclick="generateRecipe()">Generate Recipe ✨</button>
+    </div>
+    <div class="example-chips">
+      <span class="chip" onclick="fillSearch(this)">🌾 How can I make a gluten-free pizza?</span>
+      <span class="chip" onclick="fillSearch(this)">🥑 Give me a keto breakfast.</span>
+      <span class="chip" onclick="fillSearch(this)">🥔 Suggest recipes using potatoes and cheese.</span>
+    </div>
+  </div>
+
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-num">50K+</div><div class="stat-label">Recipes</div></div>
+    <div class="stat"><div class="stat-num">120+</div><div class="stat-label">Cuisines</div></div>
+    <div class="stat"><div class="stat-num">99%</div><div class="stat-label">Accuracy</div></div>
+    <div class="stat"><div class="stat-num">2M+</div><div class="stat-label">Users</div></div>
+  </div>
+
+  <div class="powered-by">
+    <span>Powered by</span>
+    <span class="ibm-pill">IBM watsonx</span>
+    <span class="ibm-pill" style="background:#6929c4;">Granite LLM</span>
+    <span class="rag-pill">RAG Pipeline</span>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="section-title">
+    <div class="tag">Features</div>
+    <h2>Everything You Need to Cook Smarter</h2>
+    <p>From AI-driven recipe generation to nutritional insights — all powered by IBM Granite.</p>
+  </div>
+  <div class="features-grid">
+    <div class="feat-card">
+      <div class="feat-icon">🍲</div>
+      <h3>Document Upload</h3>
+      <p>Upload PDFs, images, or text of any recipe and let the AI extract, parse, and enrich the content automatically.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🤖</div>
+      <h3>AI Recipe Generator</h3>
+      <p>Ask in natural language and receive a fully structured recipe with ingredients, steps, and tips generated by IBM Granite.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🥗</div>
+      <h3>Nutrition Analysis</h3>
+      <p>Get detailed calorie counts, macros, vitamins, and minerals for every recipe — tailored to serving size.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🛒</div>
+      <h3>Smart Shopping List</h3>
+      <p>Auto-generate a categorized, interactive grocery list from any recipe — with quantity calculations for your servings.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🥬</div>
+      <h3>Ingredient Substitution</h3>
+      <p>Allergies or missing items? Get AI-powered ingredient substitutions without compromising taste or texture.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">📖</div>
+      <h3>Step-by-Step Guide</h3>
+      <p>Interactive cooking mode with timers, technique explanations, and video suggestions for each preparation step.</p>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="section-title">
+    <div class="tag">How It Works</div>
+    <h2>From Question to Kitchen in Seconds</h2>
+    <p>Our RAG pipeline retrieves the best culinary knowledge and Granite synthesizes a perfect recipe.</p>
+  </div>
+  <div class="steps-row">
+    <div class="step">
+      <div class="step-num">1</div>
+      <h4>Ask or Upload</h4>
+      <p>Type your recipe question or upload a document for the AI to process.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <h4>RAG Retrieval</h4>
+      <p>IBM RAG pipeline searches 50K+ recipes and culinary knowledge sources.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <h4>Granite Generates</h4>
+      <p>IBM Granite LLM synthesizes a precise, personalized recipe response.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <h4>Cook &amp; Enjoy</h4>
+      <p>Follow the step-by-step guide and enjoy your perfectly crafted meal.</p>
+    </div>
+  </div>
+</section>
+
+<!-- RECIPE SEARCH -->
+<section id="recipe-search">
+  <div class="section-title">
+    <div class="tag">Search Recipes</div>
+    <h2>Find Your Perfect Recipe</h2>
+    <p>Filter by dietary needs, cuisine type, or available ingredients.</p>
+  </div>
+  <div class="search-bar-2">
+    <input type="text" placeholder="Search recipes, ingredients, or cuisines..." />
+    <button class="btn-search">Search 🔍</button>
+  </div>
+  <div class="filters-row">
+    <button class="filter-btn active">All</button>
+    <button class="filter-btn">Vegan</button>
+    <button class="filter-btn">Gluten-Free</button>
+    <button class="filter-btn">Keto</button>
+    <button class="filter-btn">Quick &lt;30min</button>
+    <button class="filter-btn">High Protein</button>
+    <button class="filter-btn">Vegetarian</button>
+    <button class="filter-btn">Dairy-Free</button>
+    <button class="filter-btn">Low Carb</button>
+  </div>
+</section>
+
+<!-- SAMPLE AI RESPONSE -->
+<section id="ai-response">
+  <div class="ai-response-container">
+    <div class="section-title">
+      <div class="tag">AI Response</div>
+      <h2>Sample Generated Recipe</h2>
+      <p>Here's what IBM Granite generates in response to <em>"Make me a creamy potato and cheese bake"</em></p>
+    </div>
+    <div class="ai-label">
+      ✅ Generated by IBM Granite via RAG Pipeline
+    </div>
+    <div class="recipe-card">
+      <div class="recipe-header">
+        <h2>🥔 Creamy Potato &amp; Cheese Bake</h2>
+        <p style="opacity:0.85;font-size:0.88rem;">A rich, golden-crusted potato gratin with layers of sharp cheddar, cream, and fresh herbs — comfort food elevated.</p>
+        <div class="recipe-meta">
+          <div class="meta-item"><span class="meta-icon">⏱</span> Prep: 20 min</div>
+          <div class="meta-item"><span class="meta-icon">🔥</span> Cook: 55 min</div>
+          <div class="meta-item"><span class="meta-icon">🍽</span> Serves: 4</div>
+          <div class="meta-item"><span class="meta-icon">📊</span> Medium Difficulty</div>
+          <div class="meta-item"><span class="meta-icon">🌾</span> Vegetarian</div>
+        </div>
+      </div>
+      <div class="recipe-body">
+        <div class="recipe-left">
+          <div class="recipe-section-title">Ingredients</div>
+          <ul class="ingredient-list">
+            <li><span class="ing-dot"></span>800g Yukon Gold potatoes, thinly sliced</li>
+            <li><span class="ing-dot"></span>200g sharp cheddar cheese, grated</li>
+            <li><span class="ing-dot"></span>300ml heavy cream</li>
+            <li><span class="ing-dot"></span>100ml whole milk</li>
+            <li><span class="ing-dot"></span>3 cloves garlic, minced</li>
+            <li><span class="ing-dot"></span>1 medium onion, thinly sliced</li>
+            <li><span class="ing-dot"></span>50g parmesan cheese, grated</li>
+            <li><span class="ing-dot"></span>2 tbsp unsalted butter</li>
+            <li><span class="ing-dot"></span>1 tsp fresh thyme leaves</li>
+            <li><span class="ing-dot"></span>Salt &amp; black pepper to taste</li>
+            <li><span class="ing-dot"></span>Fresh chives for garnish</li>
+          </ul>
+          <div class="sub-section">
+            <div class="recipe-section-title">Substitutions</div>
+            <div class="sub-card">
+              <p><span class="sub-bullet">↔</span>Heavy cream → Coconut cream (dairy-free)</p>
+              <p><span class="sub-bullet">↔</span>Cheddar → Gruyère or Gouda</p>
+              <p><span class="sub-bullet">↔</span>Yukon Gold → Russet potatoes</p>
+              <p><span class="sub-bullet">↔</span>Butter → Olive oil (vegan option)</p>
+            </div>
+          </div>
+        </div>
+        <div class="recipe-right">
+          <div class="recipe-section-title">Cooking Instructions</div>
+          <ol class="step-list">
+            <li><span class="step-badge">1</span>Preheat oven to 190°C (375°F). Grease a 9×13 inch baking dish with butter.</li>
+            <li><span class="step-badge">2</span>Warm cream, milk, garlic, and thyme in a saucepan over medium heat until steaming. Season generously with salt and pepper.</li>
+            <li><span class="step-badge">3</span>Layer one-third of the potato slices overlapping in the dish. Add half the onions and one-third of the cheddar. Pour one-third of the cream mixture over.</li>
+            <li><span class="step-badge">4</span>Repeat the layering process twice, finishing with potatoes on top. Pour remaining cream and top with remaining cheddar and all the parmesan.</li>
+            <li><span class="step-badge">5</span>Dot the surface with small pieces of butter. Cover tightly with foil and bake for 35 minutes.</li>
+            <li><span class="step-badge">6</span>Remove foil and bake uncovered for 20 more minutes until golden and bubbling. Let rest 10 minutes before serving.</li>
+            <li><span class="step-badge">7</span>Garnish with fresh chives and cracked black pepper. Serve warm with a simple green salad.</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- NUTRITION FACTS -->
+<section id="nutrition">
+  <div class="section-title">
+    <div class="tag">Nutrition</div>
+    <h2>Nutritional Facts</h2>
+    <p>Per serving (approx. 320g) — calculated by IBM Granite Nutrition Module</p>
+  </div>
+  <div class="nutrition-grid">
+    <div class="nut-card">
+      <div class="nut-value">485</div>
+      <div class="nut-unit">kcal</div>
+      <div class="nut-label">Calories</div>
+      <div class="nut-bar-wrap"><div class="nut-bar" style="width:65%;"></div></div>
+    </div>
+    <div class="nut-card">
+      <div class="nut-value">38</div>
+      <div class="nut-unit">g</div>
+      <div class="nut-label">Carbohydrates</div>
+      <div class="nut-bar-wrap"><div class="nut-bar" style="width:50%; background: var(--green);"></div></div>
+    </div>
+    <div class="nut-card">
+      <div class="nut-value">14</div>
+      <div class="nut-unit">g</div>
+      <div class="nut-label">Protein</div>
+      <div class="nut-bar-wrap"><div class="nut-bar" style="width:35%; background:#6929c4;"></div></div>
+    </div>
+    <div class="nut-card">
+      <div class="nut-value">29</div>
+      <div class="nut-unit">g</div>
+      <div class="nut-label">Total Fat</div>
+      <div class="nut-bar-wrap"><div class="nut-bar" style="width:55%; background:#e8522e;"></div></div>
+    </div>
+    <div class="nut-card">
+      <div class="nut-value">3.8</div>
+      <div class="nut-unit">g</div>
+      <div class="nut-label">Dietary Fiber</div>
+      <div class="nut-bar-wrap"><div class="nut-bar" style="width:30%; background: var(--green);"></div></div>
+    </div>
+    <div class="nut-card">
+      <div class="nut-value">320</div>
+      <div class="nut-unit">mg</div>
+      <div class="nut-label">Calcium</div>
+      <div class="nut-bar-wrap"><div class="nut-bar" style="width:45%; background:#0f62fe;"></div></div>
+    </div>
+    <div class="nut-card">
+      <div class="nut-value">680</div>
+      <div class="nut-unit">mg</div>
+      <div class="nut-label">Potassium</div>
+      <div class="nut-bar-wrap"><div class="nut-bar" style="width:70%; background: var(--orange);"></div></div>
+    </div>
+    <div class="nut-card">
+      <div class="nut-value">18</div>
+      <div class="nut-unit">mg</div>
+      <div class="nut-label">Vitamin C</div>
+      <div class="nut-bar-wrap"><div class="nut-bar" style="width:25%; background:#e8ac00;"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- SHOPPING LIST -->
+<section id="shopping">
+  <div class="section-title">
+    <div class="tag">Shopping List</div>
+    <h2>Your AI-Generated Grocery List</h2>
+    <p>Tick off items as you shop. Auto-generated from your recipe.</p>
+  </div>
+  <div class="shopping-container">
+    <div class="shopping-header">
+      <h3>🛒 Creamy Potato &amp; Cheese Bake</h3>
+      <span class="count" id="shopCount">0 / 11 done</span>
+    </div>
+    <div class="shopping-items" id="shopList">
+      <div class="shop-item" onclick="toggleShop(this)">
+        <input type="checkbox" onclick="event.stopPropagation(); toggleShop(this.parentElement);" />
+        <span class="shop-item-name">Yukon Gold Potatoes</span>
+        <span class="shop-item-qty">800g</span>
+      </div>
+      <div class="shop-item" onclick="toggleShop(this)">
+        <input type="checkbox" onclick="event.stopPropagation(); toggleShop(this.parentElement);" />
+        <span class="shop-item-name">Sharp Cheddar Cheese</span>
+        <span class="shop-item-qty">200g</span>
+      </div>
+      <div class="shop-item" onclick="toggleShop(this)">
+        <input type="checkbox" onclick="event.stopPropagation(); toggleShop(this.parentElement);" />
+        <span class="shop-item-name">Heavy Cream</span>
+        <span class="shop-item-qty">300ml</span>
+      </div>
+      <div class="shop-item" onclick="toggleShop(this)">
+        <input type="checkbox" onclick="event.stopPropagation(); toggleShop(this.parentElement);" />
+        <span class="shop-item-name">Whole Milk</span>
+        <span class="shop-item-qty">100ml</span>
+      </div>
+      <div class="shop-item" onclick="toggleShop(this)">
+        <input type="checkbox" onclick="event.stopPropagation(); toggleShop(this.parentElement);" />
+        <span class="shop-item-name">Garlic</span>
+        <span class="shop-item-qty">3 cloves</span>
+      </div>
+      <div class="shop-item" onclick="toggleShop(this)">
+        <input type="checkbox" onclick="event.stopPropagation(); toggleShop(this.parentElement);" />
+        <span class="shop-item-name">Yellow Onion</span>
+        <span class="shop-item-qty">1 medium</span>
+      </div>
+      <div class="shop-item" onclick="toggleShop(this)">
+        <input type="checkbox" onclick="event.stopPropagation(); toggleShop(this.parentElement);" />
+        <span class="shop-item-name">Parmesan Cheese</span>
+        <span class="shop-item-qty">50g</span>
+      </div>
+      <div class="shop-item" onclick="toggleShop(this)">
+        <input type="checkbox" onclick="event.stopPropagation(); toggleShop(this.parentElement);" />
+        <span class="shop-item-name">Unsalted Butter</span>
+        <span class="shop-item-qty">2 tbsp</span>
+      </div>
+      <div class="shop-item" onclick="toggleShop(this)">
+        <input type="checkbox" onclick="event.stopPropagation(); toggleShop(this.parentElement);" />
+        <span class="shop-item-name">Fresh Thyme</span>
+        <span class="shop-item-qty">1 small bunch</span>
+      </div>
+      <div class="shop-item" onclick="toggleShop(this)">
+        <input type="checkbox" onclick="event.stopPropagation(); toggleShop(this.parentElement);" />
+        <span class="shop-item-name">Fresh Chives</span>
+        <span class="shop-item-qty">1 small bunch</span>
+      </div>
+      <div class="shop-item" onclick="toggleShop(this)">
+        <input type="checkbox" onclick="event.stopPropagation(); toggleShop(this.parentElement);" />
+        <span class="shop-item-name">Black Pepper &amp; Sea Salt</span>
+        <span class="shop-item-qty">to taste</span>
+      </div>
+    </div>
+    <div class="shopping-footer">
+      <span class="shop-prog" id="shopProg">Tap items to check them off</span>
+      <button class="btn-clear" onclick="clearShop()">Clear All</button>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <h3>🍴 Recipe<span>AI</span></h3>
+      <p>An intelligent AI-powered recipe assistant built on IBM Granite and watsonx Orchestrate for the IBM Hackathon 2025.</p>
+      <div style="margin-top:18px; display:flex; gap:8px; flex-wrap:wrap;">
+        <span class="f-badge">IBM Granite</span>
+        <span class="f-badge">watsonx</span>
+        <span class="f-badge">RAG</span>
+        <span class="f-badge">AI Food Tech</span>
+      </div>
+    </div>
+    <div class="footer-col">
+      <h4>Product</h4>
+      <ul>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#how">How it Works</a></li>
+        <li><a href="#recipe-search">Recipe Search</a></li>
+        <li><a href="#nutrition">Nutrition</a></li>
+        <li><a href="#shopping">Shopping List</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Technology</h4>
+      <ul>
+        <li><a href="#">IBM Granite LLM</a></li>
+        <li><a href="#">watsonx Orchestrate</a></li>
+        <li><a href="#">RAG Pipeline</a></li>
+        <li><a href="#">Vector Database</a></li>
+        <li><a href="#">NLP Engine</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Hackathon</h4>
+      <ul>
+        <li><a href="#">IBM Hackathon 2025</a></li>
+        <li><a href="#">Team Overview</a></li>
+        <li><a href="#">Architecture Docs</a></li>
+        <li><a href="#">GitHub Repo</a></li>
+        <li><a href="#">Demo Video</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© 2025 RecipeAI — Built for IBM Hackathon. Powered by IBM Granite &amp; watsonx Orchestrate.</p>
+    <div class="footer-badges">
+      <span class="f-badge" style="background:#0f62fe22; color:#78a9ff; border-color:#0f62fe44;">IBM</span>
+      <span class="f-badge">Hackathon 2025</span>
+    </div>
+  </div>
+</footer>
+
+<div class="made-with">Made with IBM Bob</div>
+
+<!-- ─────────────────────────────────────────
+     IBM watsonx Orchestrate Chatbot
+     The #root div is the mount target.
+     The loader script is injected at runtime
+     so it bypasses any static CSP restrictions.
+───────────────────────────────────────── -->
+<div id="root"></div>
+
+<script>
+  /* ── Filter buttons ── */
+  document.querySelectorAll('.filter-btn').forEach(function(btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+      this.classList.add('active');
+    });
+  });
+
+  /* ── Shopping list ── */
+  function toggleShop(el) {
+    el.classList.toggle('checked');
+    var cb = el.querySelector('input[type="checkbox"]');
+    if (cb) cb.checked = el.classList.contains('checked');
+    updateShopCount();
+  }
+  function updateShopCount() {
+    var total = document.querySelectorAll('.shop-item').length;
+    var done  = document.querySelectorAll('.shop-item.checked').length;
+    document.getElementById('shopCount').textContent = done + ' / ' + total + ' done';
+    document.getElementById('shopProg').textContent =
+      done === total ? '🎉 All items collected!' :
+      done > 0       ? done + ' of ' + total + ' items checked off' :
+                       'Tap items to check them off';
+  }
+  function clearShop() {
+    document.querySelectorAll('.shop-item').forEach(function(el) {
+      el.classList.remove('checked');
+      var cb = el.querySelector('input[type="checkbox"]');
+      if (cb) cb.checked = false;
+    });
+    updateShopCount();
+  }
+
+  /* ── Hero search helpers ── */
+  function fillSearch(chip) {
+    var txt = chip.textContent.replace(/^[\s\S]{2}/,'').trim();
+    document.getElementById('heroSearch').value = txt;
+  }
+  function generateRecipe() {
+    var val = document.getElementById('heroSearch').value.trim();
+    if (!val) {
+      document.getElementById('heroSearch').placeholder = 'Please enter a question first…';
+      return;
+    }
+    document.getElementById('ai-response').scrollIntoView({ behavior: 'smooth' });
+  }
+</script>
+
+<!-- IBM watsonx Orchestrate chatbot loader -->
+<script>
+  window.wxOConfiguration = {
+    orchestrationID: "f57955f65e1847b19398f5b6778cd931_abe25472-504d-40ba-afdf-7d8d099db089",
+    hostURL: "https://au-syd.watson-orchestrate.cloud.ibm.com",
+    rootElementID: "root",
+    deploymentPlatform: "ibmcloud",
+    crn: "crn:v1:bluemix:public:watsonx-orchestrate:au-syd:a/f57955f65e1847b19398f5b6778cd931:abe25472-504d-40ba-afdf-7d8d099db089::",
+    chatOptions: {
+      agentId: "56e7c727-74c0-4494-9753-c1e0bade943f"
+    }
+  };
+  setTimeout(function () {
+    var script = document.createElement('script');
+    script.src = window.wxOConfiguration.hostURL + '/wxochat/wxoLoader.js?embed=true';
+    script.addEventListener('load', function () {
+      wxoLoader.init();
+    });
+    document.head.appendChild(script);
+  }, 0);
+</script>
+
+</body>
+</html>
